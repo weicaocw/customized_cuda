@@ -1,0 +1,16 @@
+cuda-course/09_PyTorch_Extensions/build
+
+# watch out for those pesky .DS_Store & binary files
+mnist-cuda/data
+mnist-cuda/python/data
+mnist-cuda/python/venv
+mnist-cuda/.vscode
+mnist-cuda/.venv
+mnist-cuda/.gitignore
+mnist-cuda/mnist_data
+mnist-cuda/dev
+mnist-cuda/excalidraw.log
+mnist-cuda/FINALREPORT.md
+mnist-cuda/uv.lock
+mnist-cuda/CLAUDE.md
+mnist-cuda/pyproject.toml
