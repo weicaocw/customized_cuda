@@ -2,7 +2,8 @@
 
 GCC = gcc
 NVCC = nvcc
-CUDA_FLAGS = -arch=sm_86
+# CUDA_FLAGS = -arch=sm_86
+CUDA_FLAGS = -arch=sm_61 # for TITAN Xp
 
 01:
 	@$(GCC) -o 01 01.c

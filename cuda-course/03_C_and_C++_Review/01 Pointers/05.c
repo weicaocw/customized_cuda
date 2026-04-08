@@ -7,9 +7,9 @@ int main() {
 
     printf("Position one: %d\n", *ptr);  // Output: 12
 
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 6; i++) {
         printf("%d\t", *ptr);
-        printf("%p\t", ptr);
+        printf("%p\n", ptr);
         ptr++;
     }
     // Output: 

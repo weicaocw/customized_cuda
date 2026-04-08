@@ -1,4 +1,5 @@
 cuda-course/09_PyTorch_Extensions/build
+.cache/
 
 # watch out for those pesky .DS_Store & binary files
 mnist-cuda/data

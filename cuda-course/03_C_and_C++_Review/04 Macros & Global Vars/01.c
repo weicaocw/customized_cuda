@@ -27,5 +27,10 @@
 
 
 int main() {
-    printf("Area of circle with radius %d: %f\n", radius, AREA(radius));  // Output: Area of circle with radius 6.900000: 149.571708
+    printf("Area of circle with radius %d: %f\n", radius, AREA(radius)); 
+    printf("Area of circle with radius %f: %f\n", radius, AREA(radius)); 
+    // 以下语句
+    // 单独运行时，你翻到的是操作系统的垃圾桶，里面是随机的地址碎片。
+    // 连续运行时，你翻到的是上一个 printf 刚倒掉的垃圾桶，里面是一个确定的副产物 0
+    printf("Area of circle with radius %d: %d\n", radius, AREA(radius)); 
 }

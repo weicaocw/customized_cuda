@@ -12,5 +12,10 @@ typedef struct {
 int main() {
     Point p = {1.1, 2.5};
     // printf("size of Point: %zu\n", sizeof(Point));  // Output: 8 bytes = 4 bytes (float x) + 4 bytes (float y)
-    
+
+    cout << "p.x: " << p.x << endl;
+    cout << "p.y: " << p.y << endl;
+    cout << "size of Point: " << sizeof(Point) << endl;
+
+    return 0;
 }

@@ -11,7 +11,7 @@
 int main() {
     // Initialize pointer to NULL
     int* ptr = NULL;
-    printf("1. Initial ptr value: %p\n", (void*)ptr);
+    printf("1. Initial ptr value: %p\n", (int*)ptr);
 
     // Check for NULL before using
     if (ptr == NULL) {
