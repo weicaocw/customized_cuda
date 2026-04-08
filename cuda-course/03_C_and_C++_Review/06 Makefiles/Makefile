@@ -25,5 +25,14 @@ CUDA_FLAGS = -arch=sm_61 # for TITAN Xp
 03: 
 	@$(NVCC) $(CUDA_FLAGS) -o 03_cu 03.cu
 
+invalid_func: 
+	@$(NVCC) $(CUDA_FLAGS) -o invalid_func_cu invalid_func.cu
+
+jit_test: 
+	@$(NVCC) -arch=compute_61 -code=compute_61 jit_test.cu -o jit_test_cu
+
+sync_error: 
+	@$(NVCC) $(CUDA_FLAGS) -o sync_error_cu sync_error.cu
+
 clean: 
 	rm -f 01 02 03_cu *.o

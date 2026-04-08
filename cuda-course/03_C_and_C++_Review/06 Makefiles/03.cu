@@ -7,6 +7,13 @@ __global__ void hello_from_gpu() {
 }
 
 int main() {
+    cudaDeviceProp prop;
+    cudaGetDeviceProperties(&prop, 0);
+    printf("设备名称: %s\n", prop.name);
+    printf("SM 车间总数: %d\n", prop.multiProcessorCount);
+    printf("每个 Block 允许的最大线程数: %d\n", prop.maxThreadsPerBlock);
+    printf("Warp 大小: %d 线程\n", prop.warpSize);
+    
     std::cout << "--- 程序启动 ---" << std::endl;
     
     // 启动核函数 (1个线程块，1个线程)
