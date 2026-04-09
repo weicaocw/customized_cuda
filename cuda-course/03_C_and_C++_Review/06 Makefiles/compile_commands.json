@@ -1,15 +1,1 @@
-[
-  {
-    "arguments": [
-      "/usr/local/cuda/bin/nvcc",
-      "-c",
-      "-arch=sm_61",
-      "-o",
-      "03_cu",
-      "03.cu"
-    ],
-    "directory": "/root/autodl-tmp/customized_cuda/cuda-course/03_C_and_C++_Review/06 Makefiles",
-    "file": "/root/autodl-tmp/customized_cuda/cuda-course/03_C_and_C++_Review/06 Makefiles/03.cu",
-    "output": "/root/autodl-tmp/customized_cuda/cuda-course/03_C_and_C++_Review/06 Makefiles/03_cu"
-  }
-]
+[]

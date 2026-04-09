@@ -1,4 +1,4 @@
-#include <cuda_runtime.h>
+    #include <cuda_runtime.h>
 #include <iostream>
 
 // 这是一个在 GPU 上执行的核函数
