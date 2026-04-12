@@ -1,0 +1,15 @@
+[
+  {
+    "arguments": [
+      "/usr/local/cuda/bin/nvcc",
+      "-c",
+      "-arch=sm_86",
+      "-o",
+      "00_atomicAdd_cu",
+      "00_atomicAdd.cu"
+    ],
+    "directory": "/root/autodl-tmp/customized_cuda/cuda-course/05_Writing_your_First_Kernels/04 Atomics",
+    "file": "/root/autodl-tmp/customized_cuda/cuda-course/05_Writing_your_First_Kernels/04 Atomics/00_atomicAdd.cu",
+    "output": "/root/autodl-tmp/customized_cuda/cuda-course/05_Writing_your_First_Kernels/04 Atomics/00_atomicAdd_cu"
+  }
+]
