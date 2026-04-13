@@ -35,7 +35,6 @@ int main(void) {
     float *h_data, *d_data;
     cudaStream_t stream1, stream2;
     cudaEvent_t event;
-    std::cout << event << std::endl;
 
     // Allocate host and device memory
     CHECK_CUDA_ERROR(cudaMallocHost(&h_data, size));  // Pinned memory for faster transfers
@@ -54,6 +53,7 @@ int main(void) {
 
     // Create event
     CHECK_CUDA_ERROR(cudaEventCreate(&event));
+    std::cout << event << std::endl;
 
     // Asynchronous memory copy and kernel execution in stream1
     CHECK_CUDA_ERROR(cudaMemcpyAsync(d_data, h_data, size, cudaMemcpyHostToDevice, stream1));
