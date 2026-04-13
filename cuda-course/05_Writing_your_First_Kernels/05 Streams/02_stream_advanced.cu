@@ -29,6 +29,25 @@ void CUDART_CB myStreamCallback(cudaStream_t stream, cudaError_t status, void *u
     printf("Stream callback: Operation completed\n");
 }
 
+// 死亡回调函数
+void CUDART_CB badCallback(cudaStream_t stream, cudaError_t status, void *userData) {
+    // 危险操作：强制把 void* 转换回设备指针
+    float* bad_ptr = (float*)userData; 
+    
+    // 💥 致命一击：CPU 试图读取 GPU 显存！
+    // 操作系统瞬间判定越权访问，触发 Segmentation fault (core dumped)
+    printf("Bad callback read: %f\n", bad_ptr[0]); 
+}
+
+// 拯救者回调函数
+void CUDART_CB goodCallback(cudaStream_t stream, cudaError_t status, void *userData) {
+    // 1. 安全转换：把 void* 转换回主机指针
+    float* safe_ptr = (float*)userData; 
+    
+    // 2. 合法访问：CPU 读取它自己的内存
+    printf("[Callback] Stream completed! The first element is now: %f\n", safe_ptr[0]); 
+}
+
 int main(void) {
     const int N = 1000000;
     size_t size = N * sizeof(float);
@@ -69,10 +88,18 @@ int main(void) {
     kernel2<<<(N + 255) / 256, 256, 0, stream2>>>(d_data, N);
 
     // Add callback to stream2
-    CHECK_CUDA_ERROR(cudaStreamAddCallback(stream2, myStreamCallback, NULL, 0));
+    // CHECK_CUDA_ERROR(cudaStreamAddCallback(stream2, myStreamCallback, NULL, 0));
+    // 在 main 函数中的错误调用：
+    // 传进去了 d_data (通过 cudaMalloc 申请的)
+    // CHECK_CUDA_ERROR(cudaStreamAddCallback(stream2, badCallback, (void*)d_data, 0));
+    // 在 main 函数中的正确调用：
+    // 传进去了 h_data (通过 cudaMallocHost 申请的)
+    CHECK_CUDA_ERROR(cudaStreamAddCallback(stream2, goodCallback, (void*)h_data, 0));
 
     // Asynchronous memory copy back to host
     CHECK_CUDA_ERROR(cudaMemcpyAsync(h_data, d_data, size, cudaMemcpyDeviceToHost, stream2));
+    // 不用额外的同步机制，因为：Stream 是一个严格的 FIFO（First-In, First-Out，先进先出）硬件任务队列
+    CHECK_CUDA_ERROR(cudaStreamAddCallback(stream2, goodCallback, (void*)h_data, 0));
 
     // Synchronize streams
     CHECK_CUDA_ERROR(cudaStreamSynchronize(stream1));
