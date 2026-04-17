@@ -2,6 +2,20 @@ import torch
 import time
 import math
 
+"""Results:
+   Before torch.compile:
+    Using device: cuda
+    Custom Tanh: Avg time per run: 73.838 ms
+    Built-in Tanh: Avg time per run: 9.863 ms
+    Max difference between custom and built-in outputs: 1.788139e-07
+    
+   After torch.compile:
+    Using device: cuda
+    Custom Tanh: Avg time per run: 9.862 ms
+    Built-in Tanh: Avg time per run: 9.863 ms
+    Max difference between custom and built-in outputs: 1.788139e-07
+"""
+
 # Constants
 N = 1 << 19  # Number of elements (8192)
 WARMUP_RUNS = 10
@@ -9,6 +23,7 @@ BENCHMARK_RUNS = 100
 BATCH_SIZE = 256
 
 # Custom tanh implementation
+# @torch.compile # important
 def custom_tanh(x):
     return (torch.exp(2*x) - 1) / (torch.exp(2*x) + 1)
 
@@ -60,7 +75,8 @@ def main():
     print(f"Using device: {device}")
 
     # Generate input data
-    input_tensor = torch.rand((128, 32, 224, 224), device=device) * 2 - 1  # Random values between -1 and 1
+    # input_tensor = torch.rand((128, 32, 224, 224), device=device) * 2 - 1  # Random values between -1 and 1
+    input_tensor = torch.rand((256, 32, 224, 224), device=device) * 2 - 1  # Random values between -1 and 1
 
     # Warm up GPU
     _ = torch.tanh(input_tensor)
