@@ -5,6 +5,15 @@
 #include <iostream>
 #include <limits>
 
+/* Results:
+* Image size: 224x224x32
+* Kernel size: 11x11x32x64
+* Batch size: 4
+* cuDNN average time: 21.169350 ms (Default algorithm)
+* cuDNN average time: 6.521923 ms ms (FFT Tiling algorithm)
+* Naive kernel average time: 120.483177 ms
+*/
+
 #define CHECK_CUDA(call) { cudaError_t err = call; if (err != cudaSuccess) { printf("CUDA error: %s\n", cudaGetErrorString(err)); exit(1); } }
 #define CHECK_CUDNN(call) { cudnnStatus_t err = call; if (err != CUDNN_STATUS_SUCCESS) { printf("cuDNN error: %s\n", cudnnGetErrorString(err)); exit(1); } }
 
@@ -103,7 +112,8 @@ int main() {
     CHECK_CUDNN(cudnnGetConvolutionForwardAlgorithm_v7(cudnn, inputDesc, kernelDesc, convDesc, outputDesc,
                                                        requestedAlgoCount, &returnedAlgoCount, perfResults));
 
-    cudnnConvolutionFwdAlgo_t algo = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM; // Default algorithm
+    // cudnnConvolutionFwdAlgo_t algo = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM; // Default algorithm
+    cudnnConvolutionFwdAlgo_t algo = CUDNN_CONVOLUTION_FWD_ALGO_FFT_TILING; // (Potentially) Best algorithm
 
     size_t workspaceSize;
     CHECK_CUDNN(cudnnGetConvolutionForwardWorkspaceSize(cudnn, inputDesc, kernelDesc, convDesc, outputDesc, algo, &workspaceSize));

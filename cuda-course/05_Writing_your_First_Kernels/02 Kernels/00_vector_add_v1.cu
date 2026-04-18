@@ -104,7 +104,7 @@ int main() {
     // Print results
     printf("CPU average time: %f milliseconds\n", cpu_avg_time*1000);
     printf("GPU average time: %f milliseconds\n", gpu_avg_time*1000);
-    printf("Speedup: %fx\n", cpu_avg_time / gpu_avg_time);
+    printf("Speedup: %fx\n", cpu_avg_time / gpu_avg_time); // 175x ~ 185x on RTX 3060
 
     // Verify results (optional)
     cudaMemcpy(h_c_gpu, d_c, size, cudaMemcpyDeviceToHost);

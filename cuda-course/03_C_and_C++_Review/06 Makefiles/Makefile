@@ -2,8 +2,8 @@
 
 GCC = gcc
 NVCC = nvcc
-# CUDA_FLAGS = -arch=sm_86
-CUDA_FLAGS = -arch=sm_61 # for TITAN Xp
+CUDA_FLAGS = -arch=sm_86 # RTX 3060
+# CUDA_FLAGS = -arch=sm_61 # for TITAN Xp
 
 01:
 	@$(GCC) -o 01 01.c
@@ -28,11 +28,20 @@ CUDA_FLAGS = -arch=sm_61 # for TITAN Xp
 invalid_func: 
 	@$(NVCC) $(CUDA_FLAGS) -o invalid_func_cu invalid_func.cu
 
+correct_func: 
+	@$(NVCC) $(CUDA_FLAGS) -o correct_func_cu correct_func.cu
+
 jit_test: 
 	@$(NVCC) -arch=compute_61 -code=compute_61 jit_test.cu -o jit_test_cu
 
 sync_error: 
 	@$(NVCC) $(CUDA_FLAGS) -o sync_error_cu sync_error.cu
 
+verify: 
+	@$(NVCC) $(CUDA_FLAGS) -o verify_cu verify.cu
+
+verify2: 
+	@$(NVCC) $(CUDA_FLAGS) -o verify2_cu verify2.cu
+
 clean: 
-	rm -f 01 02 03_cu *.o
+	rm -f 01 02 03_cu *.o *_cu jit_test

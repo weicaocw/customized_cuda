@@ -5,6 +5,18 @@
 #include <iostream>
 #include <limits>
 
+/* Results:
+* cuDNN average time algorithm 1: 9.599473 ms
+* cuDNN average time algorithm 7: 5.658622 ms
+* cuDNN average time algorithm 5: 6.850763 ms
+* cuDNN average time algorithm 6: 10.459137 ms
+* cuDNN average time algorithm 0: 16.075567 ms
+* cuDNN average time algorithm 4: 20.797794 ms
+* cuDNN average time algorithm 2: 21.478750 ms
+* cuDNN average time algorithm 0: 16.163074 ms
+* Naive kernel average time: 185.720673 ms
+*/
+
 #define CHECK_CUDA(call) { cudaError_t err = call; if (err != cudaSuccess) { printf("CUDA error: %s\n", cudaGetErrorString(err)); exit(1); } }
 #define CHECK_CUDNN(call) { cudnnStatus_t err = call; if (err != CUDNN_STATUS_SUCCESS) { printf("cuDNN error: %s\n", cudnnGetErrorString(err)); exit(1); } }
 
@@ -38,12 +50,12 @@ __global__ void naiveConv2d(float* input, float* kernel, float* output, int widt
 
 int main() {
     // Smaller, predefined sizes for human-readable output
-    const int width = 4;
-    const int height = 4;
+    const int width = 56;
+    const int height = 56;
     const int kernelSize = 3;
-    const int inChannels = 1;
-    const int outChannels = 1;
-    const int batchSize = 1;
+    const int inChannels = 256;
+    const int outChannels = 256;
+    const int batchSize = 32;
     const int inputSize = width * height * inChannels * batchSize;
     const int outputSize = width * height * outChannels * batchSize;
     const int kernelElements = kernelSize * kernelSize * inChannels * outChannels;
@@ -59,22 +71,22 @@ int main() {
     float* h_output_naive = (float*)malloc(outputSize * sizeof(float));
 
     // Initialize input and kernel with predefined values
-    float input_values[] = {
-        1, 2, 3, 4,
-        5, 6, 7, 8,
-        9, 10, 11, 12,
-        13, 14, 15, 16,
+    // float input_values[] = {
+    //     1, 2, 3, 4,
+    //     5, 6, 7, 8,
+    //     9, 10, 11, 12,
+    //     13, 14, 15, 16,
         
-    };
+    // };
     
-    float kernel_values[] = {
-        1, 2, 3,
-        4, 5, 6,
-        7, 8, 9,
-    };
+    // float kernel_values[] = {
+    //     1, 2, 3,
+    //     4, 5, 6,
+    //     7, 8, 9,
+    // };
 
-    memcpy(h_input, input_values, inputSize * sizeof(float));
-    memcpy(h_kernel, kernel_values, kernelElements * sizeof(float));
+    // memcpy(h_input, input_values, inputSize * sizeof(float));
+    // memcpy(h_kernel, kernel_values, kernelElements * sizeof(float));
 
     // Allocate device memory
     float *d_input, *d_kernel, *d_output_cudnn, *d_output_naive;
@@ -112,19 +124,28 @@ int main() {
     CHECK_CUDNN(cudnnGetConvolutionForwardAlgorithm_v7(cudnn, inputDesc, kernelDesc, convDesc, outputDesc,
                                                        requestedAlgoCount, &returnedAlgoCount, perfResults));
 
-    cudnnConvolutionFwdAlgo_t algo = perfResults[0].algo;
-    for (int i = 1; i < returnedAlgoCount; i++) {
-        std::cout << "Algorithm: " << perfResults[i].algo << " Time: " << perfResults[i].time << std::endl;
-        if (perfResults[i].status == CUDNN_STATUS_SUCCESS && perfResults[i].time < perfResults[0].time) {
-            algo = perfResults[i].algo;
+    std::cout << "Returned Algorithm Count: " << returnedAlgoCount << std::endl;
+    cudnnConvolutionFwdAlgo_t algos[returnedAlgoCount];
+    for (int i = 0; i < returnedAlgoCount; i++) {
+        if (perfResults[i].status == CUDNN_STATUS_SUCCESS) {
+            algos[i] = perfResults[i].algo;
+            std::cout << "Selected heuristic algorithm: " << algos[i] << std::endl;
+        }else{
+            std::cout << "Failed Algorithm: " << perfResults[i].algo << std::endl;
+            algos[i] = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
+            std::cout << "Selected fallback algorithm: " << algos[i] << std::endl;
         }
-    }
-    std::cout << "Selected algorithm: " << algo << std::endl;   
-    size_t workspaceSize;
-    CHECK_CUDNN(cudnnGetConvolutionForwardWorkspaceSize(cudnn, inputDesc, kernelDesc, convDesc, outputDesc, algo, &workspaceSize));
+    }   
 
-    void* d_workspace;
-    CHECK_CUDA(cudaMalloc(&d_workspace, workspaceSize));
+    size_t workspaceSize[returnedAlgoCount];
+    for (int i = 0; i < returnedAlgoCount; i++) {
+        CHECK_CUDNN(cudnnGetConvolutionForwardWorkspaceSize(cudnn, inputDesc, kernelDesc, convDesc, outputDesc, algos[i], &workspaceSize[i]));
+    }
+
+    void* d_workspace[returnedAlgoCount];
+    for (int i = 0; i < returnedAlgoCount; i++) {
+        CHECK_CUDA(cudaMalloc(&d_workspace[i], workspaceSize[i]));
+    }
 
     // Define grid and block sizes for the naive kernel
     dim3 blockSize(16, 16);
@@ -133,15 +154,20 @@ int main() {
     // Warmup and benchmark runs
     const int warmupRuns = 5;
     const int benchmarkRuns = 20;
-    float totalTime_cudnn = 0.0f;
+    float totalTime_cudnn[returnedAlgoCount];
+    for (int i = 0; i < returnedAlgoCount; i++) {
+        totalTime_cudnn[i] = 0.0f;
+    }
     float totalTime_naive = 0.0f;
 
     float alpha = 1.0f, beta = 0.0f;
 
     // Warmup runs
     for (int i = 0; i < warmupRuns; i++) {
-        CHECK_CUDNN(cudnnConvolutionForward(cudnn, &alpha, inputDesc, d_input, kernelDesc, d_kernel, convDesc,
-                                            algo, d_workspace, workspaceSize, &beta, outputDesc, d_output_cudnn));
+        for (int j = 0; j < returnedAlgoCount; j++) {
+            CHECK_CUDNN(cudnnConvolutionForward(cudnn, &alpha, inputDesc, d_input, kernelDesc, d_kernel, convDesc,
+                                                algos[j], d_workspace[j], workspaceSize[j], &beta, outputDesc, d_output_cudnn));
+        }
         naiveConv2d<<<gridSize, blockSize>>>(d_input, d_kernel, d_output_naive, width, height, inChannels, outChannels, kernelSize, batchSize);
         CHECK_CUDA(cudaDeviceSynchronize());
     }
@@ -151,33 +177,41 @@ int main() {
     CHECK_CUDA(cudaEventCreate(&start));
     CHECK_CUDA(cudaEventCreate(&stop));
 
+    for (int j = 0; j < returnedAlgoCount; j++) {
     for (int i = 0; i < benchmarkRuns; i++) {
         // cuDNN benchmark
         CHECK_CUDA(cudaEventRecord(start));
-        CHECK_CUDNN(cudnnConvolutionForward(cudnn, &alpha, inputDesc, d_input, kernelDesc, d_kernel, convDesc,
-                                            algo, d_workspace, workspaceSize, &beta, outputDesc, d_output_cudnn));
+            CHECK_CUDNN(cudnnConvolutionForward(cudnn, &alpha, inputDesc, d_input, kernelDesc, d_kernel, convDesc,
+                                                algos[j], d_workspace[j], workspaceSize[j], &beta, outputDesc, d_output_cudnn));
         CHECK_CUDA(cudaEventRecord(stop));
         CHECK_CUDA(cudaEventSynchronize(stop));
         
         float milliseconds = 0;
         CHECK_CUDA(cudaEventElapsedTime(&milliseconds, start, stop));
-        totalTime_cudnn += milliseconds;
-
-        // Naive kernel benchmark
-        CHECK_CUDA(cudaEventRecord(start));
-        naiveConv2d<<<gridSize, blockSize>>>(d_input, d_kernel, d_output_naive, width, height, inChannels, outChannels, kernelSize, batchSize);
-        CHECK_CUDA(cudaEventRecord(stop));
-        CHECK_CUDA(cudaEventSynchronize(stop));
-        
-        CHECK_CUDA(cudaEventElapsedTime(&milliseconds, start, stop));
-        totalTime_naive += milliseconds;
+        totalTime_cudnn[j] += milliseconds;
+    }
     }
 
+    for (int i = 0; i < benchmarkRuns; i++) {
+       // Naive kernel benchmark
+       CHECK_CUDA(cudaEventRecord(start));
+       naiveConv2d<<<gridSize, blockSize>>>(d_input, d_kernel, d_output_naive, width, height, inChannels, outChannels, kernelSize, batchSize);
+       CHECK_CUDA(cudaEventRecord(stop));
+       CHECK_CUDA(cudaEventSynchronize(stop));
+       float milliseconds = 0;
+       CHECK_CUDA(cudaEventElapsedTime(&milliseconds, start, stop));
+       totalTime_naive += milliseconds;
+    }
     // Calculate average times
-    float avgTime_cudnn = totalTime_cudnn / benchmarkRuns;
+    float avgTime_cudnn[returnedAlgoCount];
+    for (int i = 0; i < returnedAlgoCount; i++) {
+        avgTime_cudnn[i] = totalTime_cudnn[i] / benchmarkRuns;
+    }
     float avgTime_naive = totalTime_naive / benchmarkRuns;
 
-    printf("cuDNN average time: %f ms\n", avgTime_cudnn);
+    for (int i = 0; i < returnedAlgoCount; i++) {
+        printf("cuDNN average time algorithm %d: %f ms\n", algos[i], avgTime_cudnn[i]);
+    }
     printf("Naive kernel average time: %f ms\n", avgTime_naive);
 
     // Copy results back to host
@@ -193,44 +227,44 @@ int main() {
 
     printf("Max difference between cuDNN and naive kernel: %e\n", maxDiff);
 
-    // Print the output
-    printf("\ncuDNN Output:\n");
-    for (int b = 0; b < batchSize; b++) {
-        for (int c = 0; c < outChannels; c++) {
-            printf("Channel %d:\n", c);
-            for (int h = 0; h < height; h++) {
-                for (int w = 0; w < width; w++) {
-                    int idx = ((b * outChannels + c) * height + h) * width + w;
-                    printf("%f ", h_output_cudnn[idx]);
-                }
-                printf("\n");
-            }
-            printf("\n");
-        }
-    }
+    // // Print the output
+    // printf("\ncuDNN Output:\n");
+    // for (int b = 0; b < batchSize; b++) {
+    //     for (int c = 0; c < outChannels; c++) {
+    //         printf("Channel %d:\n", c);
+    //         for (int h = 0; h < height; h++) {
+    //             for (int w = 0; w < width; w++) {
+    //                 int idx = ((b * outChannels + c) * height + h) * width + w;
+    //                 printf("%f ", h_output_cudnn[idx]);
+    //             }
+    //             printf("\n");
+    //         }
+    //         printf("\n");
+    //     }
+    // }
 
-    printf("\nNaive Kernel Output:\n");
-    for (int b = 0; b < batchSize; b++) {
-        for (int c = 0; c < outChannels; c++) {
-            printf("Channel %d:\n", c);
-            for (int h = 0; h < height; h++) {
-                for (int w = 0; w < width; w++) {
-                    int idx = ((b * outChannels + c) * height + h) * width + w;
-                    printf("%f ", h_output_naive[idx]);
-                }
-                printf("\n");
-            }
-            printf("\n");
-        }
-    }
+    // printf("\nNaive Kernel Output:\n");
+    // for (int b = 0; b < batchSize; b++) {
+    //     for (int c = 0; c < outChannels; c++) {
+    //         printf("Channel %d:\n", c);
+    //         for (int h = 0; h < height; h++) {
+    //             for (int w = 0; w < width; w++) {
+    //                 int idx = ((b * outChannels + c) * height + h) * width + w;
+    //                 printf("%f ", h_output_naive[idx]);
+    //             }
+    //             printf("\n");
+    //         }
+    //         printf("\n");
+    //     }
+    // }
 
-    // Print flattened output for easier comparison with PyTorch
-    printf("\nFlattened cuDNN Output:\n");
-    for (int i = 0; i < outputSize; i++) {
-        printf("%f", h_output_cudnn[i]);
-        if (i < outputSize - 1) printf(", ");
-    }
-    printf("\n");
+    // // Print flattened output for easier comparison with PyTorch
+    // printf("\nFlattened cuDNN Output:\n");
+    // for (int i = 0; i < outputSize; i++) {
+    //     printf("%f", h_output_cudnn[i]);
+    //     if (i < outputSize - 1) printf(", ");
+    // }
+    // printf("\n");
 
     // Clean up
     CHECK_CUDNN(cudnnDestroyTensorDescriptor(inputDesc));
@@ -243,7 +277,9 @@ int main() {
     CHECK_CUDA(cudaFree(d_kernel));
     CHECK_CUDA(cudaFree(d_output_cudnn));
     CHECK_CUDA(cudaFree(d_output_naive));
-    CHECK_CUDA(cudaFree(d_workspace));
+    for (int i = 0; i < returnedAlgoCount; i++) {
+        CHECK_CUDA(cudaFree(d_workspace[i]));
+    }
 
     CHECK_CUDA(cudaEventDestroy(start));
     CHECK_CUDA(cudaEventDestroy(stop));

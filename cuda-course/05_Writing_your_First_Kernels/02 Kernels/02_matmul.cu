@@ -132,6 +132,9 @@ int main() {
     printf("CPU average time: %f microseconds\n", (cpu_avg_time * 1e6f));
     printf("GPU average time: %f microseconds\n", (gpu_avg_time * 1e6f));
     printf("Speedup: %fx\n", cpu_avg_time / gpu_avg_time);
+    // CPU average time: 190108.238161 microseconds
+    // GPU average time: 133.721530 microseconds
+    // Speedup: 1421.672617x
 
     // Free memory
     free(h_A);

@@ -23,7 +23,7 @@ int main() {
     
     cudaError_t err = cudaDeviceSynchronize();
     if (err != cudaSuccess) {
-        std::cerr << "抓到错误: " << cudaGetErrorString(err) << std::endl;
+        std::cerr << "抓到错误: " << cudaGetErrorString(err) << std::endl; // invalid program counter
     }
     return 0;
 }
