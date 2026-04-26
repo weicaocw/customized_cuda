@@ -7,6 +7,17 @@
 #include <cublas_v2.h>
 #include <cuda_runtime.h>
 
+/*
+* 总结上面这段代码的优化思想。
+* 首先不变的是，每个线程还是负责最后结果C的多个entry: 最终还是遍历了A的多行和B的某一列。
+* 
+* 延续了之前优化思想的是利用共享内存进行“分块滑动“的计算。
+* 自己创新的思想是，到了共享内存内部的时候，遍历共享内存A的行和B的某一列的时候，固定共享内存B的某一列的一个entry, 利用线程内部的寄存器计算A的多行，和B的这个entry相乘。
+* 所以每个线程其实负责了A的多行和B的某一列的结果的多个entries.
+* 
+* 如果要进一步优化，你看是不是每个线程也要负责B的多列的entry， 即线程也要开辟出多个寄存器负责共享内存的多列。
+*/
+
 #define CEIL_DIV(M, N) (((M) + (N)-1) / (N))
 
 template <const int BM, const int BN, const int BK, const int TM>
