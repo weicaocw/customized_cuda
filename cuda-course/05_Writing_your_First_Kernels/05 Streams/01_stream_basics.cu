@@ -26,9 +26,9 @@ int main(void) {
     cudaStream_t stream1, stream2;
 
     // Allocate host memory
-    h_A = (float *)malloc(size);
-    h_B = (float *)malloc(size);
-    h_C = (float *)malloc(size);
+    cudaMallocHost((void**)&h_A, size);
+    cudaMallocHost((void**)&h_B, size);
+    cudaMallocHost((void**)&h_C, size);
 
     // Initialize host arrays
     for (int i = 0; i < numElements; ++i) {
@@ -60,9 +60,9 @@ int main(void) {
     // Copy result back to host asynchronously
     CHECK_CUDA_ERROR(cudaMemcpyAsync(h_C, d_C, size, cudaMemcpyDeviceToHost, stream1));
 
-    // Synchronize streams
-    CHECK_CUDA_ERROR(cudaStreamSynchronize(stream1));
-    CHECK_CUDA_ERROR(cudaStreamSynchronize(stream2));
+    // // Synchronize streams
+    CHECK_CUDA_ERROR(cudaStreamSynchronize(stream1)); //It is a must! Otherwise, the program will continue before the stream1 finishes memcpy.
+    // CHECK_CUDA_ERROR(cudaStreamSynchronize(stream2)); // redundant because stream2 is already synchronized and is idle afterwards
 
     // Verify result
     for (int i = 0; i < numElements; ++i) {
@@ -80,9 +80,9 @@ int main(void) {
     CHECK_CUDA_ERROR(cudaFree(d_C));
     CHECK_CUDA_ERROR(cudaStreamDestroy(stream1));
     CHECK_CUDA_ERROR(cudaStreamDestroy(stream2));
-    free(h_A);
-    free(h_B);
-    free(h_C);
+    CHECK_CUDA_ERROR(cudaFreeHost(h_A));
+    CHECK_CUDA_ERROR(cudaFreeHost(h_B));
+    CHECK_CUDA_ERROR(cudaFreeHost(h_C));
 
     return 0;
 }

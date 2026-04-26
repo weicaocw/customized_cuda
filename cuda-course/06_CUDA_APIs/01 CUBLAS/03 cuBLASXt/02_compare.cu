@@ -5,6 +5,23 @@
 #include <chrono>
 #include <vector>
 
+/*
+* the results are:
+* CUBLAS run 1 time: 1.01166 seconds
+* CUBLAS run 2 time: 1.01337 seconds
+* CUBLAS run 3 time: 1.01267 seconds
+* CUBLAS run 4 time: 1.01276 seconds
+* CUBLAS run 5 time: 1.01355 seconds
+* CUBLAS-XT run 1 time: 6.09142 seconds
+* CUBLAS-XT run 2 time: 6.09535 seconds
+* CUBLAS-XT run 3 time: 7.09878 seconds
+* CUBLAS-XT run 4 time: 7.01718 seconds
+* CUBLAS-XT run 5 time: 6.75723 seconds
+* Average CUBLAS time: 1.0128 seconds
+* Average CUBLAS-XT time: 6.61199 seconds
+* Results match within tolerance.
+*/
+
 #define CHECK_CUDA(call) { cudaError_t err = call; if (err != cudaSuccess) { printf("CUDA error: %s, line %d\n", cudaGetErrorString(err), __LINE__); exit(1); } }
 #define CHECK_CUBLAS(call) { cublasStatus_t status = call; if (status != CUBLAS_STATUS_SUCCESS) { printf("CUBLAS error: %d, line %d\n", status, __LINE__); exit(1); } }
 

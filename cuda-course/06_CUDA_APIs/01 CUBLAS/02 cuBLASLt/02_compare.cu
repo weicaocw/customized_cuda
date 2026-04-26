@@ -9,6 +9,22 @@
 #include <random>
 #include <numeric>
 
+/*
+* the results are:
+* matrix size: 4096x1024 * 1024x4096
+* cuBLAS FP32 average time: 3.65911 ms
+* cuBLASLt FP32 average time: 3.79484 ms
+* cuBLAS FP16 average time: 0.923238 ms
+* cuBLASLt FP16 average time: 0.743781 ms
+* Naive CUDA kernel average time: 43.7512 ms
+* max error fp16 cublas: 0.034348
+* max error fp16 cublasLt: 0.0681305
+* cuBLAS FP32 results match the naive kernel results within tolerance of 1e-2.
+* cuBLASLt FP32 results match the naive kernel results within tolerance of 1e-2.
+* cuBLAS FP16 results match the naive kernel results within tolerance of 5e-1.
+* cuBLASLt FP16 results match the naive kernel results within tolerance of 5e-1.
+*/
+
 #define CHECK_CUDA(call) { \
     cudaError_t status = call; \
     if (status != cudaSuccess) { \

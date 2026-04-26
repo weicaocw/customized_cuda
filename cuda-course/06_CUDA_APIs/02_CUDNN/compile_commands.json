@@ -1,0 +1,15 @@
+[
+  {
+    "arguments": [
+      "/usr/local/cuda/bin/nvcc",
+      "-c",
+      "-arch=sm_86",
+      "-o",
+      "02_compare_conv_cu",
+      "02_compare_conv.cu"
+    ],
+    "directory": "/root/autodl-tmp/customized_cuda/cuda-course/06_CUDA_APIs/02_CUDNN",
+    "file": "/root/autodl-tmp/customized_cuda/cuda-course/06_CUDA_APIs/02_CUDNN/02_compare_conv.cu",
+    "output": "/root/autodl-tmp/customized_cuda/cuda-course/06_CUDA_APIs/02_CUDNN/02_compare_conv_cu"
+  }
+]

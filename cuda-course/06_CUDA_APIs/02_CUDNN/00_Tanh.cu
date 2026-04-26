@@ -4,6 +4,15 @@
 #include <stdlib.h>
 #include <math.h>
 
+/* Results:
+* Tensor size: 256 x 32 x 224 x 224
+* Average Naive CUDA kernel time: 9.970 ms
+* Average cuDNN activation time: 9.905 ms
+* Speedup: 1.01x
+* Naive kernel results correct: Yes
+* cuDNN results correct: Yes
+*/
+
 #define CHECK_CUDA(call) { \
     cudaError_t err = call; \
     if (err != cudaSuccess) { \

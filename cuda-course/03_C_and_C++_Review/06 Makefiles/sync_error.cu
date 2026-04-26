@@ -22,7 +22,7 @@ int main() {
     err = cudaDeviceSynchronize();
     if (err != cudaSuccess) {
         // 在这里，等待结束的 CPU 收到了 GPU 的死亡通知
-        std::cerr << "4. 运行期捕获到致命错误: " << cudaGetErrorString(err) << std::endl;
+        std::cerr << "4. 运行期捕获到致命错误: " << cudaGetErrorString(err) << std::endl; // unspecified launch failure
     }
     return 0;
 }

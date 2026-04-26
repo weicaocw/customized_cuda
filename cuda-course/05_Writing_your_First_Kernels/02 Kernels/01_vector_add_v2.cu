@@ -10,7 +10,7 @@
 #define BLOCK_SIZE_3D_X 16
 #define BLOCK_SIZE_3D_Y 8
 #define BLOCK_SIZE_3D_Z 8
-// 16 * 16 * 8 = 2048
+// 16 * 8 * 8 = 1024
 
 // CPU vector addition
 void vector_add_cpu(float *a, float *b, float *c, int n) {
@@ -174,6 +174,9 @@ int main() {
     printf("Speedup (CPU vs GPU 1D): %fx\n", cpu_avg_time / gpu_1d_avg_time);
     printf("Speedup (CPU vs GPU 3D): %fx\n", cpu_avg_time / gpu_3d_avg_time);
     printf("Speedup (GPU 1D vs GPU 3D): %fx\n", gpu_1d_avg_time / gpu_3d_avg_time);
+    // Speedup (CPU vs GPU 1D): 126.093349x
+    // Speedup (CPU vs GPU 3D): 114.411979x
+    // Speedup (GPU 1D vs GPU 3D): 0.907359x
 
     // Free memory
     free(h_a);
